@@ -21,7 +21,7 @@ object Processor extends App {
 
     try {
       val (accountClassification, houseAccountClassification) = fetch_account_classification
-      val resolver = Resolver(accountClassification, houseAccountClassification, sender)
+      val resolver = AccountResolver(accountClassification, houseAccountClassification, sender)
       val fundingType = identifyFundingType(resolver, sender)
       val fundingMode = if (fundingType == prohibited) null else identifyFundingMode(fundingType, accountClassification, resolver)
 
@@ -29,7 +29,7 @@ object Processor extends App {
 
       (fundingType, fundingMode)
     } catch {
-      case _: Exception => // log Exception
+      case e: Exception => println(e.getMessage) // log Exception
     }
   }
 

@@ -8,7 +8,7 @@ object CaseClassDeclaration {
     def isUnregulated = classification.getOrElse("regulated_service", null) == "unregulated"
   }
 
-  case class Resolver(account: AccountClassification, houseAccount: AccountClassification = null, sender: Sender) {
+  case class AccountResolver(account: AccountClassification, houseAccount: AccountClassification = null, sender: Sender) {
     def isNotComplianceRelationship = {
       if (houseAccount == null) account.isNotClient else account.isNotClient && houseAccount.isNotClient
     }
