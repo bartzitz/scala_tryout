@@ -1,6 +1,6 @@
-package FundingMode
+package FundingModeCalculation
 
-import FundingMode.CaseClassDeclaration._
+import FundingModeCalculation.CaseClassDeclaration._
 import org.scalatest._
 
 class FundingModeSpec extends FunSpec {
@@ -12,7 +12,7 @@ class FundingModeSpec extends FunSpec {
       val resolver     = AccountResolver(account, houseAccount, sender)
 
       it ("should returns prohibited") {
-        assert(Calculation.identifyFundingType(resolver, sender) == "prohibited")
+        assert(Calculation.identifyFundingType(resolver, sender).contains(Prohibited))
       }
     }
 
@@ -23,7 +23,7 @@ class FundingModeSpec extends FunSpec {
       val resolver     = AccountResolver(account, houseAccount, sender)
 
       it ("should returns prohibited") {
-        assert(Calculation.identifyFundingType(resolver, sender) == "prohibited")
+        assert(Calculation.identifyFundingType(resolver, sender).contains(Prohibited))
       }
     }
 
@@ -34,7 +34,7 @@ class FundingModeSpec extends FunSpec {
       val resolver     = AccountResolver(account, houseAccount, sender)
 
       it ("should returns prohibited") {
-        assert(Calculation.identifyFundingType(resolver, sender) == "prohibited")
+        assert(Calculation.identifyFundingType(resolver, sender).contains(Prohibited))
       }
     }
 
@@ -45,7 +45,7 @@ class FundingModeSpec extends FunSpec {
       val resolver     = AccountResolver(account, houseAccount, sender)
 
       it ("should returns prohibited") {
-        assert(Calculation.identifyFundingType(resolver, sender) == "collections")
+        assert(Calculation.identifyFundingType(resolver, sender).contains(Collections))
       }
     }
 
@@ -56,7 +56,7 @@ class FundingModeSpec extends FunSpec {
       val resolver     = AccountResolver(account, houseAccount, sender)
 
       it ("should returns prohibited") {
-        assert(Calculation.identifyFundingType(resolver, sender) == "collections")
+        assert(Calculation.identifyFundingType(resolver, sender).contains(Collections))
       }
     }
 
@@ -67,7 +67,7 @@ class FundingModeSpec extends FunSpec {
       val resolver     = AccountResolver(account, houseAccount, sender)
 
       it ("should returns prohibited") {
-        assert(Calculation.identifyFundingType(resolver, sender) == "collections")
+        assert(Calculation.identifyFundingType(resolver, sender).contains(Collections))
       }
     }
 
@@ -78,7 +78,7 @@ class FundingModeSpec extends FunSpec {
       val resolver     = AccountResolver(account, houseAccount, sender)
 
       it ("should returns prohibited") {
-        assert(Calculation.identifyFundingType(resolver, sender) == "receipts")
+        assert(Calculation.identifyFundingType(resolver, sender).contains(Receipts))
       }
     }
 
@@ -88,10 +88,8 @@ class FundingModeSpec extends FunSpec {
       val houseAccount = AccountClassification(Map("compliance_relationship" -> "", "regulated_service" -> ""))
       val resolver     = AccountResolver(account, houseAccount, sender)
 
-      it ("produce IllegalArgumentException exception") {
-        assertThrows[IllegalArgumentException] {
-          Calculation.identifyFundingType(resolver, sender)
-        }
+      it ("should returns None") {
+        assert(Calculation.identifyFundingType(resolver, sender).isEmpty)
       }
     }
   }
@@ -99,53 +97,65 @@ class FundingModeSpec extends FunSpec {
   describe(".identifyFundingType set") {
     describe("fundingType receipts") {
       describe("account is client") {
-        val fundingType = "receipts"
+        val fundingType = Some(Receipts)
         val sender = Sender(false, false, false)
         val account = AccountClassification(Map("compliance_relationship" -> "client", "regulated_service" -> ""))
         val houseAccount = AccountClassification(Map("compliance_relationship" -> "non-client", "regulated_service" -> ""))
         val resolver = AccountResolver(account, houseAccount, sender)
 
         it("should returns receipts_from_client") {
-          assert(Calculation.identifyFundingMode(fundingType, account, resolver) == "receipts_from_client")
+          assert(Calculation.identifyFundingMode(fundingType, account, resolver).contains(ReceiptsFromClient))
         }
       }
 
       describe("account is not client") {
-        val fundingType = "receipts"
+        val fundingType = Some(Receipts)
         val sender = Sender(false, false, false)
         val account = AccountClassification(Map("compliance_relationship" -> "non-client", "regulated_service" -> ""))
         val houseAccount = AccountClassification(Map("compliance_relationship" -> "non-client", "regulated_service" -> ""))
         val resolver = AccountResolver(account, houseAccount, sender)
 
         it("should returns receipts_obo_client") {
-          assert(Calculation.identifyFundingMode(fundingType, account, resolver) == "receipts_obo_client")
+          assert(Calculation.identifyFundingMode(fundingType, account, resolver).contains(ReceiptsOboClient))
         }
       }
     }
 
     describe("fundingType collections") {
       describe("account is nested collections") {
-        val fundingType = "collections"
+        val fundingType = Some(Collections)
         val sender = Sender(false, true, false)
         val account = AccountClassification(Map("compliance_relationship" -> "non-client", "regulated_service" -> ""))
         val houseAccount = AccountClassification(Map("compliance_relationship" -> "client", "regulated_service" -> "regulated"))
         val resolver = AccountResolver(account, houseAccount, sender)
 
         it("should returns collections_obo_clients_customer") {
-          assert(Calculation.identifyFundingMode(fundingType, account, resolver) == "collections_obo_clients_customer")
+          assert(Calculation.identifyFundingMode(fundingType, account, resolver).contains(CollectionsOboClientsCustomer))
         }
       }
 
       describe("account is not client") {
-        val fundingType = "collections"
+        val fundingType = Some(Collections)
         val sender = Sender(false, false, false)
         val account = AccountClassification(Map("compliance_relationship" -> "non-client", "regulated_service" -> ""))
         val houseAccount = AccountClassification(Map("compliance_relationship" -> "non-client", "regulated_service" -> ""))
         val resolver = AccountResolver(account, houseAccount, sender)
 
         it("should returns collections_obo_client") {
-          assert(Calculation.identifyFundingMode(fundingType, account, resolver) == "collections_obo_client")
+          assert(Calculation.identifyFundingMode(fundingType, account, resolver).contains(CollectionsOboClient))
         }
+      }
+    }
+
+    describe("no fundingType were resolved") {
+      val fundingType = None
+      val sender = Sender(false, false, false)
+      val account = AccountClassification(Map("compliance_relationship" -> "", "regulated_service" -> ""))
+      val houseAccount = AccountClassification(Map("compliance_relationship" -> "", "regulated_service" -> ""))
+      val resolver = AccountResolver(account, houseAccount, sender)
+
+      it ("should returns None") {
+        assert(Calculation.identifyFundingMode(fundingType, account, resolver).isEmpty)
       }
     }
   }

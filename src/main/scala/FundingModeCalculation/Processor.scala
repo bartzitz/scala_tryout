@@ -1,7 +1,7 @@
-package FundingMode
+package FundingModeCalculation
 
-import FundingMode.Calculation._
-import FundingMode.CaseClassDeclaration._
+import FundingModeCalculation.Calculation._
+import FundingModeCalculation.CaseClassDeclaration._
 
 object Processor extends App {
   private def fetch_account_classification = {
@@ -22,8 +22,12 @@ object Processor extends App {
     try {
       val (accountClassification, houseAccountClassification) = fetch_account_classification
       val resolver = AccountResolver(accountClassification, houseAccountClassification, sender)
+
       val fundingType = identifyFundingType(resolver, sender)
-      val fundingMode = if (fundingType == prohibited) null else identifyFundingMode(fundingType, accountClassification, resolver)
+      val fundingMode = fundingType match {
+        case Some(Collections) | Some(Receipts) => identifyFundingMode(fundingType, accountClassification, resolver)
+        case _ => None
+      }
 
       // Update transaction with fundingType, fundingMode
 
