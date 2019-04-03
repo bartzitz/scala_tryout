@@ -1,37 +1,37 @@
 package FundingModeCalculation
 
 object CaseClassDeclaration {
-  case class AccountClassification(classification: Map[String, String]) {
-    def isClient: Boolean      = classification.getOrElse("compliance_relationship", null) == "client"
-    def isNotClient: Boolean   = classification.getOrElse("compliance_relationship", null) == "non-client"
-    def isRegulated: Boolean   = classification.getOrElse("regulated_service", null) == "regulated"
-    def isUnregulated: Boolean = classification.getOrElse("regulated_service", null) == "unregulated"
+  case class AccountClassification(classification: AccountClassificationResponse) {
+    def isClient: Boolean      = classification.compliance_relationship == "client"
+    def isNotClient: Boolean   = classification.compliance_relationship == "non-client"
+    def isRegulated: Boolean   = classification.regulated_service == "regulated"
+    def isUnregulated: Boolean = classification.regulated_service == "unregulated"
   }
 
-  case class AccountResolver(account: AccountClassification, houseAccount: AccountClassification = null, sender: Sender) {
+  case class AccountResolver(account: AccountClassification, houseAccount: Option[AccountClassification], sender: Sender) {
     def isNotComplianceRelationship: Boolean = {
-      if (houseAccount == null) account.isNotClient else account.isNotClient && houseAccount.isNotClient
+      if (houseAccount.isEmpty) false else account.isNotClient && houseAccount.get.isNotClient
     }
 
     def isNestedPaymentsWithCollections: Boolean = {
-      val isRegulated = if (houseAccount == null) account.isRegulated else houseAccount.isRegulated
+      val isRegulated = if (houseAccount.isEmpty) account.isRegulated else houseAccount.get.isRegulated
 
       isRegulated && account.isClient && (sender.isNotAccountHolder || sender.isApprovedFundingPartner)
     }
 
     def isRegulatedAffiliateReceipts: Boolean = {
-      if (houseAccount == null) false
-      else account.isClient && houseAccount.isNotClient && houseAccount.isRegulated && sender.isAccountHolder
+      if (houseAccount.isEmpty) false
+      else account.isClient && houseAccount.get.isNotClient && houseAccount.get.isRegulated && sender.isAccountHolder
     }
 
     def isCorporateCollections: Boolean = {
-      if (houseAccount == null) false
-      else account.isNotClient && houseAccount.isClient && houseAccount.isUnregulated && sender.isAccountHolder
+      if (houseAccount.isEmpty) false
+      else account.isNotClient && houseAccount.get.isClient && houseAccount.get.isUnregulated && sender.isAccountHolder
     }
 
     def isNestedCollections: Boolean = {
-      if (houseAccount == null) false
-      else account.isNotClient && houseAccount.isClient && houseAccount.isRegulated && (sender.isNotAccountHolder || sender.isApprovedFundingPartner)
+      if (houseAccount.isEmpty) false
+      else account.isNotClient && houseAccount.get.isClient && houseAccount.get.isRegulated && (sender.isNotAccountHolder || sender.isApprovedFundingPartner)
     }
   }
 
